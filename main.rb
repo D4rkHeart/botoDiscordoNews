@@ -16,13 +16,14 @@ end
 bot.command :botonews do |event,srcName,number|
 	if srcName.nil? and number.nil?
     botResponse = botoNewsDefault()
+  elsif srcName == "random"
+    botResponse = botoRandomNews(number)
   else
-    # botResponse = botoNewsSource(srcName)
-    botResponse = botoNewsSourceNumber(srcName,number)
+    botResponse = botoNewsXSources(srcName,number)
 	end 
-
+  p botResponse
   if botResponse.empty?
-    event.respond "Error we cannot found your news"
+    event.respond "Error we cannot find your news"
   else
     event.respond botResponse
   end
@@ -30,19 +31,32 @@ bot.command :botonews do |event,srcName,number|
 end
 
 def botoNewsDefault
-  uri = URI('http://localhost:8081/news')
-  json = Net::HTTP.get(uri)
-  rawResponse = JSON.parse(json)	
-  newsLink = rawResponse.map do |news|
-    news["item_url"]
-  end.compact
+  newsLink = botConnection(nil)
   newsLink = newsLink.map do |url|
     "<#{url}>"
   end 
   newsLink.first(3).join("\n")
 end
 
-def botoNewsSource(srcName)
+def botoNewsXSources(srcName,number)
+  newsLink = botConnection(srcName)
+  number = number.nil? ? 3 : number.to_i
+  srcName.split(",").map do |src|
+    botoNewsSource(src,number)
+  end.compact.join("\n")
+end
+
+def botoNewsSource(srcName,number)
+  newsLink = botConnection(srcName)
+  newsLink.first(number).join("\n")
+end
+
+def botoRandomNews(number=nil)
+  number = number.nil? ? 1 : number.to_i
+  botConnection(nil).shuffle.first(number).join("\n")
+end
+
+def botConnection(*srcName)
   uri = URI('http://localhost:8081/news')
   uri.query = URI.encode_www_form({src: srcName})
   json = Net::HTTP.get(uri) 
@@ -50,37 +64,8 @@ def botoNewsSource(srcName)
   newsLink = rawResponse.map do |news|
     news["item_url"]
   end.compact
-  newsLink.first(4).join("\n")
+  return newsLink
 end
-
-def botoNewsSource(srcName)
-  uri = URI('http://localhost:8081/news')
-  uri.query = URI.encode_www_form({src: srcName})
-  json = Net::HTTP.get(uri) 
-  rawResponse = JSON.parse(json)
-  newsLink = rawResponse.map do |news|
-    news["item_url"]
-  end.compact
-  newsLink.first(4).join("\n")
-end
-
-def botoNewsSourceNumber(srcName,number)
-  uri = URI('http://localhost:8081/news')
-  uri.query = URI.encode_www_form({src: srcName})
-  json = Net::HTTP.get(uri) 
-  rawResponse = JSON.parse(json)
-  newsLink = rawResponse.map do |news|
-    news["item_url"]
-  end.compact
-  newsLink.first(number.to_i).join("\n")
-end
-
-def botoNewsSourceNumber(srcName,number)
-  apiConnection(srcName)
-  newsLink = rawResponse.map do |news|
-    news["item_url"]
-  end.compact
-  newsLink.first(number.to_i).join("\n")
 
 bot.run
 
