@@ -16,14 +16,15 @@ end
 bot.command :botonews do |event,srcName,number|
 	if srcName.nil? and number.nil?
     botResponse = botoNewsDefault()
-  else 
-    botResponse = botoNewsSource(srcName)
+  else
+    # botResponse = botoNewsSource(srcName)
+    botResponse = botoNewsSourceNumber(srcName,number)
 	end 
 
   if botResponse.empty?
-  event.respond "Error we cannot found your news"
+    event.respond "Error we cannot found your news"
   else
-  event.respond botResponse
+    event.respond botResponse
   end
 
 end
@@ -52,19 +53,34 @@ def botoNewsSource(srcName)
   newsLink.first(4).join("\n")
 end
 
+def botoNewsSource(srcName)
+  uri = URI('http://localhost:8081/news')
+  uri.query = URI.encode_www_form({src: srcName})
+  json = Net::HTTP.get(uri) 
+  rawResponse = JSON.parse(json)
+  newsLink = rawResponse.map do |news|
+    news["item_url"]
+  end.compact
+  newsLink.first(4).join("\n")
+end
+
+def botoNewsSourceNumber(srcName,number)
+  uri = URI('http://localhost:8081/news')
+  uri.query = URI.encode_www_form({src: srcName})
+  json = Net::HTTP.get(uri) 
+  rawResponse = JSON.parse(json)
+  newsLink = rawResponse.map do |news|
+    news["item_url"]
+  end.compact
+  newsLink.first(number.to_i).join("\n")
+end
+
+def botoNewsSourceNumber(srcName,number)
+  apiConnection(srcName)
+  newsLink = rawResponse.map do |news|
+    news["item_url"]
+  end.compact
+  newsLink.first(number.to_i).join("\n")
 
 bot.run
 
-# Net::HTTP.get('/news', news);
-# bot.command :ping do |event|
-# 	event.respond "Pong!"
-# end
-
-
-# readableArticle = File.read("article.json")
-# bot.command(event, arguments, chained = false, check_permissions = true) ⇒ String
-
-####DEBUGGUER
-# puts "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-# puts uri.inspect
-# puts "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
